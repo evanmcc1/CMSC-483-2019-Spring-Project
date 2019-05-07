@@ -1,6 +1,6 @@
 routeFinder: routeFinder.c
 	# floor only seems to like c++
-	g++ -g -Wall -o routeFinder routeFinder.c
+	g++ -g -Wall -o routeFinder routeFinder.cpp
 
 generateCity: generateCity.cpp
 	# atoi only seems to like c++
