@@ -11,9 +11,9 @@
 #define CYCLECOUNT 16
 #define CITYWIDTH 20
 
-#define errorVerbosity 1
-#define instructionVerbosity 2
-#define sanityVerbosity 3
+#define ERRORVERBOSITY 1
+#define INSTRUCTIONVERBOSITY 2
+#define SANITYVERBOSITY 3
 
 void bulkRoute(int);
 void pruneLoops(int);
@@ -326,7 +326,7 @@ double testRoutes()
 // Generate test routes until we're satisfied the best is found
 void findRoutes()
 {
-	if (verbosity >= sanityVerbosity)
+	if (verbosity >= SANITYVERBOSITY)
 	{
 		printf("\nin findRoutes\n");
 	}
@@ -342,7 +342,7 @@ void findRoutes()
 		bulkRoute(i);
 	}
 	
-	if (verbosity >= sanityVerbosity)
+	if (verbosity >= SANITYVERBOSITY)
 	{
 		printf("\nVehicle routes:\n");
 		
@@ -374,7 +374,7 @@ void findRoutes()
 			if (score > bestScore)
 			{
 				//TODO: Make best vehicleRoute equal to working vehicleRoute
-				//TODO: Is this a correct copy?
+				//TODO: incorrect copy?
 				for(j = 0; j < vehicleCount; j++)
 				{
 					for(k = 0; k < stopCount; k++)
@@ -382,7 +382,7 @@ void findRoutes()
 						bestRoute[j][k] = vehicleRoute[j][k];
 					}
 					
-					//TODO: Is this a correct copy?
+					//TODO: incorrect copy?
 					vehicleRouteLength[j] = bestRouteLength[j];
 				}
 
@@ -422,19 +422,19 @@ int main(int argc, char* argv[])
 	// there are no vehicles
 	{
 		// Exit
-		if (verbosity >= errorVerbosity)
+		if (verbosity >= ERRORVERBOSITY)
 			printf("No vehicles. Do not supply a number less than 1\n");
 		return 1;
 	}
 	
-	if (verbosity >= instructionVerbosity) printf("Enter Total Number of stops:\t");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\t");
 	scanf("%d", &stopCount);
 	
 	if (stopCount < MINSTOPS)
 	// there are no possible routes
 	{
 		// Exit
-		if (verbosity >= errorVerbosity)
+		if (verbosity >= ERRORVERBOSITY)
 			printf("No possible useful routes. Do not supply a number less than %d\n", MINSTOPS);
 		return 2;
 	}
@@ -475,11 +475,11 @@ int main(int argc, char* argv[])
 		bestRoute[i] = (int*)malloc(sizeof(int) * stopCount);
 	}
 	
-	if (verbosity >= instructionVerbosity) printf("\nEnter customer replenishment vector\n");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter customer replenishment vector\n");
 	
 	for (i = 0; i < stopCount; i++)
 	{
-		if (verbosity >= instructionVerbosity) printf("\nEnter replenishRate, maxCustomers for row [%d]. One number per line\n", i);
+		if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter replenishRate, maxCustomers for row [%d]. One number per line\n", i);
 		
 		scanf("%lf", &stops[i].replenishRate);
 		scanf("%d", &stops[i].maxCustomers);
@@ -487,7 +487,7 @@ int main(int argc, char* argv[])
 		//TODO: Ensure these values are nonzero
 	}
 	
-	if (verbosity >= sanityVerbosity)
+	if (verbosity >= SANITYVERBOSITY)
 	{
 		printf("\nEntered replenishment vector\n(replenishRate, maxCustomers)\n");
 		
@@ -497,11 +497,11 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if (verbosity >= instructionVerbosity) printf("\nEnter cost matrix\n");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter cost matrix\n");
 	
 	for(i = 0; i < stopCount; i++)
 	{
-		if (verbosity >= instructionVerbosity) printf("\nEnter %d elements of fare, distance for row [%d]. One number per line\n", stopCount, i);
+		if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter %d elements of fare, distance for row [%d]. One number per line\n", stopCount, i);
 		
 		for(j = 0; j < stopCount; j++)
 		{
@@ -515,7 +515,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if (verbosity >= sanityVerbosity)
+	if (verbosity >= SANITYVERBOSITY)
 	{
 		printf("\nEntered cost matrix\n(fare, distance)\n");
 		
@@ -534,12 +534,12 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	if (verbosity >= instructionVerbosity) printf("\n\nCalculating routes...");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...");
 	
 	findRoutes();
 	
 	// Print routes
-	if (verbosity >= instructionVerbosity) printf("\n\nRoutes:\n");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nRoutes:\n");
 	
 	// Print routes (print node IDs in for loop)
 	printf("Score: %lf\n", bestScore);
