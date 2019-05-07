@@ -4,6 +4,7 @@
 #include <math.h>
 
 #define defaultStops 8
+#define cityWidth 20
 
 int main(int argc, char* argv[])
 {
@@ -56,8 +57,8 @@ int main(int argc, char* argv[])
 			else
 			// we need this route's information
 			{
-				// Distance (20 miles max)
-				double distance = drand48() * 20;
+				// Distance (miles, cityWidth max)
+				double distance = drand48() * cityWidth;
 				
 				// Fare
 				// $2.50 initial charge plus 50 cents per 1/5 mile or 60 seconds
