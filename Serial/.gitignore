@@ -1,4 +1,5 @@
 routeFinder
 generateCity
 *.swp
-city.txt
+city*.txt
+route*.txt
