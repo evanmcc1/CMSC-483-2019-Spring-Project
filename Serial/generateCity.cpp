@@ -31,10 +31,10 @@ int main(int argc, char* argv[])
 	// each stop
 	{
 		// Replenishment rate
-		printf("%f\n", drand48());
+		printf("%f\n", drand48() * stopsToGenerate);
 		
 		// Maximum customers
-		printf("%f\n", ceil(drand48() * stopsToGenerate));
+		printf("%d\n", (int)ceil(drand48() * stopsToGenerate));
 	}
 	
 	// Generate the transportation matrix
