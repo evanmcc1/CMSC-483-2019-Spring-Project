@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include "mpi.h"
+#include <stddef.h>
 
 #define DEFAULTSTOPS 8
 #define MINSTOPS 3
@@ -47,6 +49,12 @@ double score, bestScore;
 int temperature = DEFAULTSTOPS;
 // How much output the program gives
 int verbosity = 0;
+// MPI group size and my ranking variables
+int size, rank;
+// Which routes the current process is responsible for
+int *myRoutes;
+// How many vehicles the current process is responsible for
+int myVehiclesTotal;
 
 // Place stop into vehicleRoute at position
 void insertIntoRoute(int stop, int vehicle, int position)
@@ -181,7 +189,13 @@ void generateRoutes()
 // Score a vehicleRoute based on fare per mile
 double testRoutes()
 {
+	if (verbosity >= SANITYVERBOSITY)
+		printf("\nEntered testRoutes: rank: %d\n", rank);
+	
 	int i;
+	
+	// Get routes from node 0
+	MPI_Bcast(vehicleRoute, vehicleCount * stopCount, MPI_INT, 0, MPI_COMM_WORLD);
 	
 	// Reset score to track this test
 	score = 0;
@@ -200,6 +214,9 @@ double testRoutes()
 	// How many customers have accumulated
 	double *readyCustomers = (double*)malloc(sizeof(double) * stopCount);
 	
+	//TODO: Remove this when debugging completed
+	if (verbosity >= SANITYVERBOSITY)
+		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	// Set customers at each stop
 	for (i = 0; i < stopCount; i++)
 	{
@@ -212,13 +229,20 @@ double testRoutes()
 		}
 	}
 	
+	//TODO: Remove this when debugging completed
+	if (verbosity >= SANITYVERBOSITY)
+		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	// Set each vehicle at its starting point and arrive
-	for (i = 0; i < vehicleCount; i++)
+	for (i = 0; i < myVehiclesTotal; i++)
 	{
-		vehicleLocations[i] = vehicleRoute[i][0];
-		vehicleRoutePositions[i] = 0;
-		vehicleArrivals[i] = 0;
+		vehicleLocations[myRoutes[i]] = vehicleRoute[myRoutes[i]][0];
+		vehicleRoutePositions[myRoutes[i]] = 0;
+		vehicleArrivals[myRoutes[i]] = 0;
 	}
+	
+	//TODO: Remove this when debugging completed
+	if (verbosity >= SANITYVERBOSITY)
+		printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 	
 	while (currentMiles < targetMiles)
 	{
@@ -233,12 +257,12 @@ double testRoutes()
 		minimumArrival = 999999;
 		#endif
 		
-		for (i = 0; i < vehicleCount; i++)
+		for (i = 0; i < myVehiclesTotal; i++)
 		{
-			if (vehicleArrivals[i] < minimumArrival)
+			if (vehicleArrivals[myRoutes[i]] < minimumArrival)
 			{
-				arrivedVehicle = i;
-				minimumArrival = vehicleArrivals[i];
+				arrivedVehicle = myRoutes[i];
+				minimumArrival = vehicleArrivals[myRoutes[i]];
 			}
 		}
 		
@@ -249,7 +273,8 @@ double testRoutes()
 		{
 			// Customers replenish at 1 replenishRate per mile traveled
 			// Therefore, track how many miles were traveled!
-			readyCustomers[i] += stops[i].replenishRate * (minimumArrival - currentMiles);
+			// Reduce by how many routes I have, I can only claim a portion of the replenishment
+			readyCustomers[i] += stops[i].replenishRate * (minimumArrival - currentMiles) * (myVehiclesTotal / vehicleCount);
 			
 			// Ensure there aren't too many customers
 			if (readyCustomers[i] > stops[i].maxCustomers)
@@ -317,9 +342,29 @@ double testRoutes()
 		}
 	}
 	
+	double totalScore, maxMiles;
+	
+	// We only have our own score. We need to sum everyone's!
+	MPI_Allreduce(
+		&score,
+		&totalScore,
+		1,
+		MPI_DOUBLE,
+		MPI_SUM,
+		MPI_COMM_WORLD);
+	
+	// We only tracked our own miles. We need to get the maximum of everyone's!
+	MPI_Allreduce(
+		&currentMiles,
+		&maxMiles,
+		1,
+		MPI_DOUBLE,
+		MPI_MAX,
+		MPI_COMM_WORLD);
+	
 	// Divide score by miles * vehicles
 	// We only tracked fare, but we want maximum fare/mile
-	score /= currentMiles;
+	score = totalScore / maxMiles / vehicleCount;
 	
 	return score;
 }
@@ -328,19 +373,20 @@ double testRoutes()
 void findRoutes()
 {
 	if (verbosity >= SANITYVERBOSITY)
-	{
-		printf("\nin findRoutes\n");
-	}
+		printf("\nEntered findRoutes: rank: %d\n", rank);
 	
 	int i, j, k;
 	
 	// Seed randomness
-	srand48(time(NULL));
+	srand48(time(NULL) * rank);
 	
+	if (rank == 0)
+	{
 	// Check that every vehicleRoute has at least two locations
 	for (i = 0; i < vehicleCount; i++)
 	{
 		bulkRoute(i);
+	}
 	}
 	
 	// Reset vehicleRoute scores
@@ -354,6 +400,9 @@ void findRoutes()
 			//Test routes
 			testRoutes();
 			
+			// Only bother as root node
+			if (rank == 0)
+			{
 			// Save best vehicleRoute
 			if (score > bestScore)
 			{
@@ -470,6 +519,7 @@ void findRoutes()
 			
 			// Edit routes
 			generateRoutes();
+			}
 		}
 		
 		// Reduce temperature
@@ -480,12 +530,19 @@ void findRoutes()
 
 int main(int argc, char* argv[])
 {
+	// Start MPI
+	MPI_Init(&argc, &argv);
+	
+	// Get number of nodes and my rank
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	
 	int i, j;
 	
 	// Get how many vehicle we should use from arguments
 	if (argc > 1)
 	{
-			vehicleCount = atoi(argv[1]);
+		vehicleCount = atoi(argv[1]);
 	}
 	else
 		vehicleCount = 1;
@@ -495,7 +552,7 @@ int main(int argc, char* argv[])
 			verbosity = atoi(argv[2]);
 	}
 	else
-		verbosity = 0;
+		verbosity = ERRORVERBOSITY;
 	
 	if (vehicleCount < 1)
 	// there are no vehicles
@@ -503,9 +560,40 @@ int main(int argc, char* argv[])
 		// Exit
 		if (verbosity >= ERRORVERBOSITY)
 			printf("No vehicles. Do not supply a number less than 1\n");
-		return 1;
+		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 	
+	if (verbosity >= SANITYVERBOSITY) printf("Before route claiming: rank: %d\n", rank);
+	
+	// Find which routes I'm responsible for
+	if (vehicleCount < rank)
+	// there's no possibility I have a route
+	{
+		// Just quit
+		return -2;
+	}
+	
+	// Find how many routes I could be responsible for
+	myVehiclesTotal = 0;
+	int maxRouteFound = rank;
+	
+	while (maxRouteFound < vehicleCount)
+	{
+		myVehiclesTotal++;
+		maxRouteFound += size;
+	}
+	
+	// Allocate space to store my routes
+	myRoutes = (int*)malloc(sizeof(int) * myVehiclesTotal);
+	
+	// Claim every size-th route
+	for (i = 0; i < myVehiclesTotal; i++)
+	{
+		myRoutes[i] = rank + size * i;
+	}
+	
+	if (rank == 0)
+	{
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\t");
 	scanf("%d", &stopCount);
 	
@@ -515,17 +603,25 @@ int main(int argc, char* argv[])
 		// Exit
 		if (verbosity >= ERRORVERBOSITY)
 			printf("No possible useful routes. Do not supply a number less than %d\n", MINSTOPS);
-		return 2;
+		MPI_Abort(MPI_COMM_WORLD, -3);
 	}
+	}
+	
+	MPI_Bcast(&stopCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	
 	
 	// Allocate data in arrays
 	
 	// Matrix for how to navigate the city
 	routes = (connection**)malloc(sizeof(connection*) * stopCount);
 	
+	// Ensure route elements are contiguous for MPI
+	// https://stackoverflow.com/questions/5104847/mpi-bcast-a-dynamic-2d-array/5107489#5107489
+	connection *connectionElements = (connection*)malloc(sizeof(connection) * stopCount * stopCount);
+	
 	for (i = 0; i < stopCount; i++)
 	{
-		routes[i] = (connection*)malloc(sizeof(connection) * stopCount);
+		routes[i] = &(connectionElements[stopCount*i]);
 	}
 	
 	// Array of information about locations
@@ -545,15 +641,22 @@ int main(int argc, char* argv[])
 		bestRouteLength[i] = 0;
 	}
 	
+	// Ensure route elements are contiguous for MPI
+	// https://stackoverflow.com/questions/5104847/mpi-bcast-a-dynamic-2d-array/5107489#5107489
+	int *elements = (int*)malloc(sizeof(int) * vehicleCount * stopCount);
+	int *bestElements = (int*)malloc(sizeof(int) * vehicleCount * stopCount);
+	
 	for (i = 0; i < vehicleCount; i++)
 	// each vehicle
 	{
 		// Each vehicle gets space for a vehicleRoute
 		// The vehicleRoute probably shouldn't be longer than a hamiltonian path, so equal to the number of stops
-		vehicleRoute[i] = (int*)malloc(sizeof(int) * stopCount);
-		bestRoute[i] = (int*)malloc(sizeof(int) * stopCount);
+		vehicleRoute[i] = &(elements[stopCount*i]);
+		bestRoute[i] = &(bestElements[stopCount*i]);
 	}
 	
+	if (rank == 0)
+	{
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter customer replenishment vector\n");
 	
 	for (i = 0; i < stopCount; i++)
@@ -575,7 +678,21 @@ int main(int argc, char* argv[])
 			printf("(%lf, %d)\n", stops[i].replenishRate, stops[i].maxCustomers);
 		}
 	}
+	}
 	
+	// http://mpi.deino.net/mpi_functions/MPI_Type_create_struct.html
+	MPI_Datatype locationType;
+	MPI_Datatype type_location[2] = {MPI_DOUBLE, MPI_INT};
+	int blocklen_location[2] = {1, 1};
+	MPI_Aint disp_location[2];
+	disp_location[0] = offsetof(location, replenishRate);
+	disp_location[1] = offsetof(location, maxCustomers);
+	MPI_Type_create_struct(2, blocklen_location, disp_location, type_location, &locationType);
+	MPI_Type_commit(&locationType);
+	MPI_Bcast(stops, stopCount, locationType, 0, MPI_COMM_WORLD);
+	
+	if (rank == 0)
+	{
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\nEnter cost matrix\n");
 	
 	for(i = 0; i < stopCount; i++)
@@ -612,11 +729,28 @@ int main(int argc, char* argv[])
 			printf("\n");
 		}
 	}
+	}
 	
+	// http://mpi.deino.net/mpi_functions/MPI_Type_create_struct.html
+	MPI_Datatype connectionType;
+	MPI_Datatype type_connection[2] = {MPI_DOUBLE, MPI_DOUBLE};
+	int blocklen_connection[2] = {1, 1};
+	MPI_Aint disp_connection[2];
+	disp_connection[0] = offsetof(connection, fare);
+	disp_connection[1] = offsetof(connection, distance);
+	MPI_Type_create_struct(2, blocklen_connection, disp_connection, type_connection, &connectionType);
+	MPI_Type_commit(&connectionType);
+	MPI_Bcast(routes, stopCount * stopCount, connectionType, 0, MPI_COMM_WORLD);
+	
+	if (rank == 0)
+	{
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...");
+	}
 	
 	findRoutes();
 	
+	if (rank == 0)
+	{
 	// Print routes
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nRoutes:\n");
 	
@@ -634,6 +768,7 @@ int main(int argc, char* argv[])
 	}
 	
 	printf("\n");
+	}
 	
 	return 0;
 }
