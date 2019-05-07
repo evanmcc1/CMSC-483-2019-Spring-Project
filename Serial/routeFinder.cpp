@@ -342,23 +342,6 @@ void findRoutes()
 		bulkRoute(i);
 	}
 	
-	if (verbosity >= SANITYVERBOSITY)
-	{
-		printf("\nVehicle routes:\n");
-		
-		for(i = 0; i < vehicleCount; i++)
-		{
-			printf("length: %d\n", vehicleRouteLength[i]);
-			
-			printf("elements:\n");
-			
-			for(j = 0; j < stopCount; j++)
-			{
-				printf("%d\n", vehicleRoute[i][j]);
-			}
-		}
-	}
-	
 	// Reset vehicleRoute scores
 	score = 0;
 	bestScore = 0;
@@ -374,7 +357,7 @@ void findRoutes()
 			if (score > bestScore)
 			{
 				//TODO: Make best vehicleRoute equal to working vehicleRoute
-				//TODO: incorrect copy?
+				//TODO: Test if this copy is correct
 				for(j = 0; j < vehicleCount; j++)
 				{
 					for(k = 0; k < stopCount; k++)
@@ -382,11 +365,29 @@ void findRoutes()
 						bestRoute[j][k] = vehicleRoute[j][k];
 					}
 					
-					//TODO: incorrect copy?
-					vehicleRouteLength[j] = bestRouteLength[j];
+					//TODO: Test if this copy is correct
+					bestRouteLength[j] = vehicleRouteLength[j];
 				}
-
+				
 				bestScore = score;
+				
+				if (verbosity >= SANITYVERBOSITY)
+				{
+					printf("\nbest vehicle routes (score %lf):\n", bestScore);
+					
+					for(i = 0; i < vehicleCount; i++)
+					{
+						printf("length: %d\n", bestRouteLength[i]);
+						
+						printf("elements:\n");
+						
+						for(j = 0; j < stopCount; j++)
+						{
+							if (j < bestRouteLength[i]) printf("\t");
+							printf("%d\n", bestRoute[i][j]);
+						}
+					}
+				}
 			}
 			
 			// Edit routes
