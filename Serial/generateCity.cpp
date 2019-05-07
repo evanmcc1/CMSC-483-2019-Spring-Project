@@ -3,12 +3,12 @@
 #include <time.h>
 #include <math.h>
 
-#define defaultStops 8
-#define cityWidth 20
+#define DEFAULTSTOPS 8
+#define CITYWIDTH 20
 
 int main(int argc, char* argv[])
 {
-	int stopsToGenerate = defaultStops;
+	int stopsToGenerate = DEFAULTSTOPS;
 	
 	int i, j;
 	
@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
 			else
 			// we need this route's information
 			{
-				// Distance (miles, cityWidth max)
-				double distance = drand48() * cityWidth;
+				// Distance (miles, CITYWIDTH max)
+				double distance = drand48() * CITYWIDTH;
 				
 				// Fare
 				// $2.50 initial charge plus 50 cents per 1/5 mile or 60 seconds

@@ -5,11 +5,11 @@
 #include <time.h>
 #include <math.h>
 
-#define defaultStops 8
-#define minStops 3
+#define DEFAULTSTOPS 8
+#define MINSTOPS 3
 //TODO: Is this a good number of cycles?
-#define cycleCount 16
-#define cityWidth 20
+#define CYCLECOUNT 16
+#define CITYWIDTH 20
 
 #define errorVerbosity 1
 #define instructionVerbosity 2
@@ -29,7 +29,7 @@ typedef struct {
 } location;
 
 // Total number of stops in the city
-int stopCount = defaultStops;
+int stopCount = DEFAULTSTOPS;
 // How many vehicles are in our company
 int vehicleCount = 1;
 // Matrix for how to navigate the city
@@ -43,7 +43,7 @@ int *vehicleRouteLength, *bestRouteLength;
 double score, bestScore;
 // How much the vehicleRoute can be edited
 // Inverse is the probability of replacing bad vehicleRoute
-int temperature = defaultStops;
+int temperature = DEFAULTSTOPS;
 // How much output the program gives
 int verbosity = 0;
 
@@ -107,7 +107,7 @@ void removeRandomStop(int vehicle)
 
 void bulkRoute(int vehicle)
 {
-	while (vehicleRouteLength[vehicle] < minStops)
+	while (vehicleRouteLength[vehicle] < MINSTOPS)
 	// there are too few stops
 	{
 		// Add more!
@@ -155,8 +155,8 @@ void generateRoute(int vehicle)
 	// Randomize how many stops to remove
 	int removeStops = (int)floor(temperature * drand48());
 	
-	if (removeStops > stopCount - minStops)
-		removeStops = stopCount - minStops;
+	if (removeStops > stopCount - MINSTOPS)
+		removeStops = stopCount - MINSTOPS;
 	
 	while (removeStops > 0)
 	{
@@ -186,7 +186,7 @@ double testRoutes()
 	score = 0;
 	
 	// Counters to know when we're done testing
-	double targetMiles = cityWidth * 8;
+	double targetMiles = CITYWIDTH * 8;
 	double currentMiles = 0;
 	
 	// Locations of the vehicles
@@ -326,6 +326,11 @@ double testRoutes()
 // Generate test routes until we're satisfied the best is found
 void findRoutes()
 {
+	if (verbosity >= sanityVerbosity)
+	{
+		printf("\nin findRoutes\n");
+	}
+	
 	int i, j, k;
 	
 	// Seed randomness
@@ -334,11 +339,23 @@ void findRoutes()
 	// Check that every vehicleRoute has at least two locations
 	for (i = 0; i < vehicleCount; i++)
 	{
-		if (vehicleRouteLength[i] < 2)
-		// there are too few stops
+		bulkRoute(i);
+	}
+	
+	if (verbosity >= sanityVerbosity)
+	{
+		printf("\nVehicle routes:\n");
+		
+		for(i = 0; i < vehicleCount; i++)
 		{
-			// Add more!
-			generateRoute(i);
+			printf("length: %d\n", vehicleRouteLength[i]);
+			
+			printf("elements:\n");
+			
+			for(j = 0; j < stopCount; j++)
+			{
+				printf("%d\n", vehicleRoute[i][j]);
+			}
 		}
 	}
 	
@@ -348,7 +365,7 @@ void findRoutes()
 	
 	while (temperature >= 1)
 	{
-		for (i = 0; i < cycleCount; i++)
+		for (i = 0; i < CYCLECOUNT; i++)
 		{
 			//Test routes
 			testRoutes();
@@ -413,12 +430,12 @@ int main(int argc, char* argv[])
 	if (verbosity >= instructionVerbosity) printf("Enter Total Number of stops:\t");
 	scanf("%d", &stopCount);
 	
-	if (stopCount < minStops)
+	if (stopCount < MINSTOPS)
 	// there are no possible routes
 	{
 		// Exit
 		if (verbosity >= errorVerbosity)
-			printf("No possible useful routes. Do not supply a number less than %d\n", minStops);
+			printf("No possible useful routes. Do not supply a number less than %d\n", MINSTOPS);
 		return 2;
 	}
 	
@@ -529,11 +546,11 @@ int main(int argc, char* argv[])
 	
 	for (i = 0; i < vehicleCount; i++)
 	{
-		printf("Route %d:", i);
+		printf("Route %d, length %d:\n", i, bestRouteLength[i]);
 		
 		for (j = 0; j < bestRouteLength[i]; j++)
 		{
-			printf("%d", vehicleRoute[i][j]);
+			printf("%d\n", bestRoute[i][j]);
 		}
 	}
 	
