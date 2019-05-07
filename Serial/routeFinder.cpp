@@ -14,6 +14,7 @@
 #define ERRORVERBOSITY 1
 #define INSTRUCTIONVERBOSITY 2
 #define SANITYVERBOSITY 3
+#define INSANITYVERBOSITY 4
 
 void bulkRoute(int);
 void pruneLoops(int);
@@ -356,8 +357,27 @@ void findRoutes()
 			// Save best vehicleRoute
 			if (score > bestScore)
 			{
-				//TODO: Make best vehicleRoute equal to working vehicleRoute
-				//TODO: Test if this copy is correct
+				if (verbosity >= SANITYVERBOSITY)
+				{
+					printf("Before best replacement:\n");
+					printf("best vehicle routes (working, best):\n");
+					printf("score: %lf, %lf\n", score, bestScore);
+					
+					for(i = 0; i < vehicleCount; i++)
+					{
+						printf("length: %d, %d\n", vehicleRouteLength[i], bestRouteLength[i]);
+						
+						printf("elements:\n");
+						
+						for(j = 0; j < stopCount; j++)
+						{
+							if (j < vehicleRouteLength[i]) printf("\t");
+							printf("%d %d\n", vehicleRoute[i][j], bestRoute[i][j]);
+						}
+					}
+				}
+				
+				// Make best vehicle route equal to working vehicle route
 				for(j = 0; j < vehicleCount; j++)
 				{
 					for(k = 0; k < stopCount; k++)
@@ -365,7 +385,6 @@ void findRoutes()
 						bestRoute[j][k] = vehicleRoute[j][k];
 					}
 					
-					//TODO: Test if this copy is correct
 					bestRouteLength[j] = vehicleRouteLength[j];
 				}
 				
@@ -373,18 +392,77 @@ void findRoutes()
 				
 				if (verbosity >= SANITYVERBOSITY)
 				{
-					printf("\nbest vehicle routes (score %lf):\n", bestScore);
+					printf("After best replacement:\n");
+					printf("best vehicle routes (working, best):\n");
+					printf("score: %lf, %lf\n", score, bestScore);
 					
 					for(i = 0; i < vehicleCount; i++)
 					{
-						printf("length: %d\n", bestRouteLength[i]);
+						printf("length: %d, %d\n", vehicleRouteLength[i], bestRouteLength[i]);
+						
+						printf("elements:\n");
+						
+						for(j = 0; j < stopCount; j++)
+						{
+							if (j < vehicleRouteLength[i]) printf("\t");
+							printf("%d %d\n", vehicleRoute[i][j], bestRoute[i][j]);
+						}
+					}
+				}
+			}
+			
+			// Sometimes abandon working copy and use best routes
+			if (drand48() < 1.0 / temperature)
+			{
+				if (verbosity >= INSANITYVERBOSITY)
+				{
+					printf("Before working replacement:\n");
+					printf("best vehicle routes (working, best):\n");
+					printf("score: %lf, %lf\n", score, bestScore);
+					
+					for(i = 0; i < vehicleCount; i++)
+					{
+						printf("length: %d, %d\n", vehicleRouteLength[i], bestRouteLength[i]);
 						
 						printf("elements:\n");
 						
 						for(j = 0; j < stopCount; j++)
 						{
 							if (j < bestRouteLength[i]) printf("\t");
-							printf("%d\n", bestRoute[i][j]);
+							printf("%d %d\n", vehicleRoute[i][j], bestRoute[i][j]);
+						}
+					}
+				}
+				
+				//Copy best route back to working set
+				for(j = 0; j < vehicleCount; j++)
+				{
+					for(k = 0; k < stopCount; k++)
+					{
+						vehicleRoute[j][k] = bestRoute[j][k];
+					}
+					
+					vehicleRouteLength[j] = bestRouteLength[j];
+				}
+				
+				score = bestScore;
+				
+				if (verbosity >= INSANITYVERBOSITY)
+				{
+					printf("After working replacement:\n");
+					printf("best vehicle routes (working, best):\n");
+					printf("score: %lf, %lf\n", score, bestScore);
+					
+					for(i = 0; i < vehicleCount; i++)
+					{
+						printf("length: %d, %d\n", vehicleRouteLength[i], bestRouteLength[i]);
+						
+						printf("elements:\n");
+						
+						for(j = 0; j < stopCount; j++)
+						{
+							if (j < bestRouteLength[i]) printf("\t");
+							printf("%d %d\n", vehicleRoute[i][j], bestRoute[i][j]);
 						}
 					}
 				}
