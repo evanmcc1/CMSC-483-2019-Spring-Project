@@ -320,6 +320,7 @@ double testRoutes()
 	// Divide score by miles * vehicles
 	// We only tracked fare, but we want maximum fare/mile
 	score /= currentMiles;
+	score /= vehicleCount;
 	
 	return score;
 }
