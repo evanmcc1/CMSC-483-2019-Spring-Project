@@ -23,4 +23,6 @@ done
 
 cat routeResults.txt | sed -e '/^real/d' -e '/^sys/d' -e '/^$/d' -e 's/user\t//' -e 's/s//' > routeTimes.txt
 cat routeOutput.txt | sed -e '/^S/!d' -e 's/Score: //' > routeScores.txt
+cat routeSettings.txt | awk '{ print $1 }' > routeVehicles.txt
+cat routeSettings.txt | awk '{ print $2 }' > routeLocations.txt
 # TODO: Collect average route length
