@@ -1,5 +1,4 @@
 #!/bin/bash
-# Workflow script for particle sim
 
 # Exit on error
 set -e
