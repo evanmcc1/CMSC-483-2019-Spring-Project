@@ -6,6 +6,7 @@
 #include <math.h>
 #include "mpi.h"
 #include <stddef.h>
+#include <unistd.h>
 
 #define DEFAULTSTOPS 8
 #define MINSTOPS 3
@@ -189,13 +190,14 @@ void generateRoutes()
 // Score a vehicleRoute based on fare per mile
 double testRoutes()
 {
-	if (verbosity >= SANITYVERBOSITY)
-		printf("\nEntered testRoutes: rank: %d\n", rank);
-	
 	int i;
 	
 	// Get routes from node 0
-	MPI_Bcast(vehicleRoute, vehicleCount * stopCount, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&(vehicleRoute[0][0]), vehicleCount * stopCount, MPI_INT, 0, MPI_COMM_WORLD);
+	
+	//TODO: Remove this when debugging completed
+	if (verbosity >= SANITYVERBOSITY)
+		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	
 	// Reset score to track this test
 	score = 0;
@@ -211,12 +213,19 @@ double testRoutes()
 	// When the vehicles will arrive
 	double *vehicleArrivals = (double*)malloc(sizeof(double) * vehicleCount);
 	
+	if (verbosity >= SANITYVERBOSITY)
+	{
+		printf("\nInside testRoutes testing vehicleLocations: rank: %d\n", rank);
+		
+		for (i = 0; i < vehicleCount; i++)
+		{
+			printf("\nrank, i, vehicleLocations[i]: %d, %d, %d\n", rank, i, vehicleLocations[i]);
+		}
+	}
+	
 	// How many customers have accumulated
 	double *readyCustomers = (double*)malloc(sizeof(double) * stopCount);
 	
-	//TODO: Remove this when debugging completed
-	if (verbosity >= SANITYVERBOSITY)
-		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	// Set customers at each stop
 	for (i = 0; i < stopCount; i++)
 	{
@@ -229,9 +238,6 @@ double testRoutes()
 		}
 	}
 	
-	//TODO: Remove this when debugging completed
-	if (verbosity >= SANITYVERBOSITY)
-		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	// Set each vehicle at its starting point and arrive
 	for (i = 0; i < myVehiclesTotal; i++)
 	{
@@ -240,9 +246,19 @@ double testRoutes()
 		vehicleArrivals[myRoutes[i]] = 0;
 	}
 	
+	if (verbosity >= SANITYVERBOSITY)
+	{
+		printf("\nInside testRoutes testing vehicleLocations: rank: %d\n", rank);
+		
+		for (i = 0; i < vehicleCount; i++)
+		{
+			printf("\nrank, i, vehicleLocations[i]: %d, %d, %d\n", rank, i, vehicleLocations[i]);
+		}
+	}
+	
 	//TODO: Remove this when debugging completed
 	if (verbosity >= SANITYVERBOSITY)
-		printf("\nInside testRoutes after segfault: rank: %d\n", rank);
+		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	
 	while (currentMiles < targetMiles)
 	{
@@ -288,36 +304,92 @@ double testRoutes()
 		
 		int destination;
 		
+		//TODO: Remove this when debugging completed
+		if (verbosity >= SANITYVERBOSITY)
+			printf("\nInside testRoutes around segfault: rank: %d\n", rank);
+		
+		//TODO: Remove this when debugging completed
+		if (verbosity >= SANITYVERBOSITY)
+		{
+			destination = 0;
+			printf("\nInside testRoutes before segfault test: rank: %d\n", rank);
+			printf("\nrank, arrivedVehicle: %d, %d", rank, arrivedVehicle);
+			printf("\nrank, vehicleLocations[0]: %d, %d", rank, vehicleLocations[0]);
+			//printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0]: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0]);
+			printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0].fare: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0].fare);
+		}
+	
 		if (readyCustomers[vehicleLocations[arrivedVehicle]] >= 1)
 		// I can pick up a passenger
 		{
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes around segfault picking up passenger: rank: %d\n", rank);
+				
 			// Pick up this passenger
 			readyCustomers[vehicleLocations[arrivedVehicle]]--;
+			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
 			
 			// Randomize destination
 			//TODO: Base destination on replenishment rate
 			destination = (int)floor(stopCount * drand48());
 			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+			{
+				printf("\nInside testRoutes before segfault: rank: %d\n", rank);
+				printf("\nrank, vehicleLocations[arrivedVehicle]: %d, %d", rank, vehicleLocations[arrivedVehicle]);
+				//printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0]: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0]);
+				printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0].fare: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0].fare);
+			}
+			
 			// Assume we collect fare
 			score += routes[vehicleLocations[arrivedVehicle]][destination].fare;
+			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 			
 			// Set next vehicle arrival mileage
 			vehicleArrivals[arrivedVehicle] = currentMiles + routes[vehicleLocations[arrivedVehicle]][destination].distance;
 			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
+			
 			// Assume the vehicle got there
 			vehicleLocations[arrivedVehicle] = destination;
+			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
 			
 			// This may have diverted the vehicle from its route
 			// Mark that it needs to recalculate where it is / go to location 0
 			vehicleRoutePositions[arrivedVehicle] = -1;
+			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 		}
 		else
 		{
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes around segfault continuing route: rank: %d\n", rank);
+				
 			// Continue to route
 			// Find what the destination is
 			if (vehicleRoutePositions[arrivedVehicle] >= 0)
 			// currently at a stop on my route
 			{
+				//TODO: Remove this when debugging completed
+				if (verbosity >= SANITYVERBOSITY)
+					printf("\nInside testRoutes at stop: rank: %d\n", rank);
+				
 				// Increment route position
 				vehicleRoutePositions[arrivedVehicle]++;
 				
@@ -326,10 +398,18 @@ double testRoutes()
 			}
 			else
 			{
+				//TODO: Remove this when debugging completed
+				if (verbosity >= SANITYVERBOSITY)
+					printf("\nInside testRoutes NOT at stop: rank: %d\n", rank);
+				
 				// We are in the middle of nowhere, so go to the start
 				// Go to route element 0
 				vehicleRoutePositions[arrivedVehicle] = 0;
 			}
+			
+			//TODO: Remove this when debugging completed
+			if (verbosity >= SANITYVERBOSITY)
+				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 			
 			// Find what the actual destination is
 			destination = vehicleRoute[arrivedVehicle][vehicleRoutePositions[arrivedVehicle]];
@@ -340,6 +420,10 @@ double testRoutes()
 			// Assume the vehicle gets there
 			vehicleLocations[arrivedVehicle] = destination;
 		}
+		
+		//TODO: Remove this when debugging completed
+		if (verbosity >= SANITYVERBOSITY)
+			printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 	}
 	
 	double totalScore, maxMiles;
@@ -594,7 +678,7 @@ int main(int argc, char* argv[])
 	
 	if (rank == 0)
 	{
-	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\t");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\n");
 	scanf("%d", &stopCount);
 	
 	if (stopCount < MINSTOPS)
@@ -622,6 +706,18 @@ int main(int argc, char* argv[])
 	for (i = 0; i < stopCount; i++)
 	{
 		routes[i] = &(connectionElements[stopCount*i]);
+	}
+	
+	//TODO: Remove after debugging
+	if (rank == 1)
+	{
+	int z = 0;
+	char hostname[256];
+	gethostname(hostname, sizeof(hostname));
+	printf("rank %d PID %d on %s ready for attach\n", rank, getpid(), hostname);
+	fflush(stdout);
+	while (0 == z)
+		sleep(5);
 	}
 	
 	// Array of information about locations
@@ -744,7 +840,7 @@ int main(int argc, char* argv[])
 	
 	if (rank == 0)
 	{
-	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...\n");
 	}
 	
 	findRoutes();
