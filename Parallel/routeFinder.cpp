@@ -5,7 +5,6 @@
 #include <time.h>
 #include <math.h>
 #include "mpi.h"
-#include <stddef.h>
 #include <unistd.h>
 
 #define DEFAULTSTOPS 8
@@ -50,12 +49,9 @@ double score, bestScore;
 int temperature = DEFAULTSTOPS;
 // How much output the program gives
 int verbosity = 0;
+
 // MPI group size and my ranking variables
 int size, rank;
-// Which routes the current process is responsible for
-int *myRoutes;
-// How many vehicles the current process is responsible for
-int myVehiclesTotal;
 
 // Place stop into vehicleRoute at position
 void insertIntoRoute(int stop, int vehicle, int position)
@@ -192,13 +188,6 @@ double testRoutes()
 {
 	int i;
 	
-	// Get routes from node 0
-	MPI_Bcast(&(vehicleRoute[0][0]), vehicleCount * stopCount, MPI_INT, 0, MPI_COMM_WORLD);
-	
-	//TODO: Remove this when debugging completed
-	if (verbosity >= SANITYVERBOSITY)
-		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
-	
 	// Reset score to track this test
 	score = 0;
 	
@@ -212,16 +201,6 @@ double testRoutes()
 	int *vehicleRoutePositions = (int*)malloc(sizeof(int) * vehicleCount);
 	// When the vehicles will arrive
 	double *vehicleArrivals = (double*)malloc(sizeof(double) * vehicleCount);
-	
-	if (verbosity >= SANITYVERBOSITY)
-	{
-		printf("\nInside testRoutes testing vehicleLocations: rank: %d\n", rank);
-		
-		for (i = 0; i < vehicleCount; i++)
-		{
-			printf("\nrank, i, vehicleLocations[i]: %d, %d, %d\n", rank, i, vehicleLocations[i]);
-		}
-	}
 	
 	// How many customers have accumulated
 	double *readyCustomers = (double*)malloc(sizeof(double) * stopCount);
@@ -239,26 +218,12 @@ double testRoutes()
 	}
 	
 	// Set each vehicle at its starting point and arrive
-	for (i = 0; i < myVehiclesTotal; i++)
+	for (i = 0; i < vehicleCount; i++)
 	{
-		vehicleLocations[myRoutes[i]] = vehicleRoute[myRoutes[i]][0];
-		vehicleRoutePositions[myRoutes[i]] = 0;
-		vehicleArrivals[myRoutes[i]] = 0;
+		vehicleLocations[i] = vehicleRoute[i][0];
+		vehicleRoutePositions[i] = 0;
+		vehicleArrivals[i] = 0;
 	}
-	
-	if (verbosity >= SANITYVERBOSITY)
-	{
-		printf("\nInside testRoutes testing vehicleLocations: rank: %d\n", rank);
-		
-		for (i = 0; i < vehicleCount; i++)
-		{
-			printf("\nrank, i, vehicleLocations[i]: %d, %d, %d\n", rank, i, vehicleLocations[i]);
-		}
-	}
-	
-	//TODO: Remove this when debugging completed
-	if (verbosity >= SANITYVERBOSITY)
-		printf("\nInside testRoutes before segfault: rank: %d\n", rank);
 	
 	while (currentMiles < targetMiles)
 	{
@@ -273,12 +238,12 @@ double testRoutes()
 		minimumArrival = 999999;
 		#endif
 		
-		for (i = 0; i < myVehiclesTotal; i++)
+		for (i = 0; i < vehicleCount; i++)
 		{
-			if (vehicleArrivals[myRoutes[i]] < minimumArrival)
+			if (vehicleArrivals[i] < minimumArrival)
 			{
-				arrivedVehicle = myRoutes[i];
-				minimumArrival = vehicleArrivals[myRoutes[i]];
+				arrivedVehicle = i;
+				minimumArrival = vehicleArrivals[i];
 			}
 		}
 		
@@ -289,8 +254,7 @@ double testRoutes()
 		{
 			// Customers replenish at 1 replenishRate per mile traveled
 			// Therefore, track how many miles were traveled!
-			// Reduce by how many routes I have, I can only claim a portion of the replenishment
-			readyCustomers[i] += stops[i].replenishRate * (minimumArrival - currentMiles) * (myVehiclesTotal / vehicleCount);
+			readyCustomers[i] += stops[i].replenishRate * (minimumArrival - currentMiles);
 			
 			// Ensure there aren't too many customers
 			if (readyCustomers[i] > stops[i].maxCustomers)
@@ -304,92 +268,36 @@ double testRoutes()
 		
 		int destination;
 		
-		//TODO: Remove this when debugging completed
-		if (verbosity >= SANITYVERBOSITY)
-			printf("\nInside testRoutes around segfault: rank: %d\n", rank);
-		
-		//TODO: Remove this when debugging completed
-		if (verbosity >= SANITYVERBOSITY)
-		{
-			destination = 0;
-			printf("\nInside testRoutes before segfault test: rank: %d\n", rank);
-			printf("\nrank, arrivedVehicle: %d, %d", rank, arrivedVehicle);
-			printf("\nrank, vehicleLocations[0]: %d, %d", rank, vehicleLocations[0]);
-			//printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0]: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0]);
-			printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0].fare: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0].fare);
-		}
-	
 		if (readyCustomers[vehicleLocations[arrivedVehicle]] >= 1)
 		// I can pick up a passenger
 		{
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes around segfault picking up passenger: rank: %d\n", rank);
-				
 			// Pick up this passenger
 			readyCustomers[vehicleLocations[arrivedVehicle]]--;
-			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
 			
 			// Randomize destination
 			//TODO: Base destination on replenishment rate
 			destination = (int)floor(stopCount * drand48());
 			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-			{
-				printf("\nInside testRoutes before segfault: rank: %d\n", rank);
-				printf("\nrank, vehicleLocations[arrivedVehicle]: %d, %d", rank, vehicleLocations[arrivedVehicle]);
-				//printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0]: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0]);
-				printf("\nrank, routes[vehicleLocations[arrivedVehicle]][0].fare: %d, %lf", rank, routes[vehicleLocations[arrivedVehicle]][0].fare);
-			}
-			
 			// Assume we collect fare
 			score += routes[vehicleLocations[arrivedVehicle]][destination].fare;
-			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 			
 			// Set next vehicle arrival mileage
 			vehicleArrivals[arrivedVehicle] = currentMiles + routes[vehicleLocations[arrivedVehicle]][destination].distance;
 			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
-			
 			// Assume the vehicle got there
 			vehicleLocations[arrivedVehicle] = destination;
-			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes around segfault: rank: %d\n", rank);
 			
 			// This may have diverted the vehicle from its route
 			// Mark that it needs to recalculate where it is / go to location 0
 			vehicleRoutePositions[arrivedVehicle] = -1;
-			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 		}
 		else
 		{
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes around segfault continuing route: rank: %d\n", rank);
-				
 			// Continue to route
 			// Find what the destination is
 			if (vehicleRoutePositions[arrivedVehicle] >= 0)
 			// currently at a stop on my route
 			{
-				//TODO: Remove this when debugging completed
-				if (verbosity >= SANITYVERBOSITY)
-					printf("\nInside testRoutes at stop: rank: %d\n", rank);
-				
 				// Increment route position
 				vehicleRoutePositions[arrivedVehicle]++;
 				
@@ -398,18 +306,10 @@ double testRoutes()
 			}
 			else
 			{
-				//TODO: Remove this when debugging completed
-				if (verbosity >= SANITYVERBOSITY)
-					printf("\nInside testRoutes NOT at stop: rank: %d\n", rank);
-				
 				// We are in the middle of nowhere, so go to the start
 				// Go to route element 0
 				vehicleRoutePositions[arrivedVehicle] = 0;
 			}
-			
-			//TODO: Remove this when debugging completed
-			if (verbosity >= SANITYVERBOSITY)
-				printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 			
 			// Find what the actual destination is
 			destination = vehicleRoute[arrivedVehicle][vehicleRoutePositions[arrivedVehicle]];
@@ -420,35 +320,12 @@ double testRoutes()
 			// Assume the vehicle gets there
 			vehicleLocations[arrivedVehicle] = destination;
 		}
-		
-		//TODO: Remove this when debugging completed
-		if (verbosity >= SANITYVERBOSITY)
-			printf("\nInside testRoutes after segfault: rank: %d\n", rank);
 	}
-	
-	double totalScore, maxMiles;
-	
-	// We only have our own score. We need to sum everyone's!
-	MPI_Allreduce(
-		&score,
-		&totalScore,
-		1,
-		MPI_DOUBLE,
-		MPI_SUM,
-		MPI_COMM_WORLD);
-	
-	// We only tracked our own miles. We need to get the maximum of everyone's!
-	MPI_Allreduce(
-		&currentMiles,
-		&maxMiles,
-		1,
-		MPI_DOUBLE,
-		MPI_MAX,
-		MPI_COMM_WORLD);
 	
 	// Divide score by miles * vehicles
 	// We only tracked fare, but we want maximum fare/mile
-	score = totalScore / maxMiles / vehicleCount;
+	score /= currentMiles;
+	score /= vehicleCount;
 	
 	return score;
 }
@@ -457,20 +334,19 @@ double testRoutes()
 void findRoutes()
 {
 	if (verbosity >= SANITYVERBOSITY)
-		printf("\nEntered findRoutes: rank: %d\n", rank);
+	{
+		printf("\nin findRoutes\n");
+	}
 	
 	int i, j, k;
 	
 	// Seed randomness
 	srand48(time(NULL) * rank);
 	
-	if (rank == 0)
-	{
 	// Check that every vehicleRoute has at least two locations
 	for (i = 0; i < vehicleCount; i++)
 	{
 		bulkRoute(i);
-	}
 	}
 	
 	// Reset vehicleRoute scores
@@ -484,9 +360,6 @@ void findRoutes()
 			//Test routes
 			testRoutes();
 			
-			// Only bother as root node
-			if (rank == 0)
-			{
 			// Save best vehicleRoute
 			if (score > bestScore)
 			{
@@ -603,12 +476,38 @@ void findRoutes()
 			
 			// Edit routes
 			generateRoutes();
-			}
 		}
 		
 		// Reduce temperature
 		//TODO: Is this a good way to reduce temperature?
 		temperature--;
+		
+		//TODO: Share data with other nodes and select the best route
+		
+		double *allScores;
+		if (rank == 0)
+			allScores = (double*)malloc(sizeof(double) * size);
+		
+		MPI_Gather(&bestScore, 1, MPI_INT, allScores, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		
+		int bestNode = 0;
+		
+		if (rank == 0)
+		{
+			for (i = 0; i < size; i++)
+			{
+				if (allScores[i] > allScores[bestNode])
+				{
+					bestNode = i;
+				}
+			}
+		}
+		
+		MPI_Bcast(&bestNode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		
+		MPI_Bcast(bestRoute, vehicleCount * stopCount, MPI_INT, bestNode, MPI_COMM_WORLD);
+		MPI_Bcast(bestRouteLength, vehicleCount, MPI_INT, bestNode, MPI_COMM_WORLD);
+		MPI_Bcast(&bestScore, 1, MPI_DOUBLE, bestNode, MPI_COMM_WORLD);
 	}
 }
 
@@ -622,6 +521,17 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	
 	int i, j;
+	
+	if (rank == 1)
+	{
+	int z = 0;
+	char hostname[256];
+	gethostname(hostname, sizeof(hostname));
+	printf("PID %d on %s ready for attach\n", getpid(), hostname);
+	fflush(stdout);
+	while (0 == z)
+		sleep(5);
+	}
 	
 	// Get how many vehicle we should use from arguments
 	if (argc > 1)
@@ -647,35 +557,6 @@ int main(int argc, char* argv[])
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 	
-	if (verbosity >= SANITYVERBOSITY) printf("Before route claiming: rank: %d\n", rank);
-	
-	// Find which routes I'm responsible for
-	if (vehicleCount < rank)
-	// there's no possibility I have a route
-	{
-		// Just quit
-		return -2;
-	}
-	
-	// Find how many routes I could be responsible for
-	myVehiclesTotal = 0;
-	int maxRouteFound = rank;
-	
-	while (maxRouteFound < vehicleCount)
-	{
-		myVehiclesTotal++;
-		maxRouteFound += size;
-	}
-	
-	// Allocate space to store my routes
-	myRoutes = (int*)malloc(sizeof(int) * myVehiclesTotal);
-	
-	// Claim every size-th route
-	for (i = 0; i < myVehiclesTotal; i++)
-	{
-		myRoutes[i] = rank + size * i;
-	}
-	
 	if (rank == 0)
 	{
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\n");
@@ -687,12 +568,11 @@ int main(int argc, char* argv[])
 		// Exit
 		if (verbosity >= ERRORVERBOSITY)
 			printf("No possible useful routes. Do not supply a number less than %d\n", MINSTOPS);
-		MPI_Abort(MPI_COMM_WORLD, -3);
+		MPI_Abort(MPI_COMM_WORLD, -2);
 	}
 	}
 	
 	MPI_Bcast(&stopCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	
 	
 	// Allocate data in arrays
 	
@@ -706,18 +586,6 @@ int main(int argc, char* argv[])
 	for (i = 0; i < stopCount; i++)
 	{
 		routes[i] = &(connectionElements[stopCount*i]);
-	}
-	
-	//TODO: Remove after debugging
-	if (rank == 1)
-	{
-	int z = 0;
-	char hostname[256];
-	gethostname(hostname, sizeof(hostname));
-	printf("rank %d PID %d on %s ready for attach\n", rank, getpid(), hostname);
-	fflush(stdout);
-	while (0 == z)
-		sleep(5);
 	}
 	
 	// Array of information about locations
@@ -741,7 +609,6 @@ int main(int argc, char* argv[])
 	// https://stackoverflow.com/questions/5104847/mpi-bcast-a-dynamic-2d-array/5107489#5107489
 	int *elements = (int*)malloc(sizeof(int) * vehicleCount * stopCount);
 	int *bestElements = (int*)malloc(sizeof(int) * vehicleCount * stopCount);
-	
 	for (i = 0; i < vehicleCount; i++)
 	// each vehicle
 	{
@@ -840,7 +707,7 @@ int main(int argc, char* argv[])
 	
 	if (rank == 0)
 	{
-	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...\n");
+	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...");
 	}
 	
 	findRoutes();
@@ -865,6 +732,8 @@ int main(int argc, char* argv[])
 	
 	printf("\n");
 	}
+	
+	MPI_Finalize();
 	
 	return 0;
 }
