@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Used to gather data across a wide range of input
+
 # Recompile changes
 make routeFinder generateCity
 
