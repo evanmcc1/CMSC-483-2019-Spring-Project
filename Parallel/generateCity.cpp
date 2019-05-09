@@ -5,8 +5,6 @@
 
 #define DEFAULTSTOPS 8
 #define CITYWIDTH 20
-#define CAPACITYMULTIPLIER 16
-#define RATEMULTIPLIER 16
 
 int main(int argc, char* argv[])
 {
@@ -34,10 +32,10 @@ int main(int argc, char* argv[])
 	// each stop
 	{
 		// Replenishment rate
-		printf("%f\n", drand48() * stopsToGenerate * RATEMULTIPLIER);
+		printf("%f\n", drand48() * stopsToGenerate);
 		
 		// Maximum customers
-		printf("%d\n", (int)ceil(drand48() * stopsToGenerate * CAPACITYMULTIPLIER));
+		printf("%d\n", (int)ceil(drand48() * stopsToGenerate));
 	}
 	
 	// Generate the transportation matrix

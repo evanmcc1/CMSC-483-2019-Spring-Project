@@ -1,3 +1,5 @@
+all: routefinder generateCity
+	
 routeFinder: routeFinder.cpp
 	# floor only seems to like c++
 	g++ -g -Wall -o routeFinder routeFinder.cpp
