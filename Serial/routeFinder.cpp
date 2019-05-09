@@ -81,6 +81,7 @@ void insertIntoRoute(int stop, int vehicle, int position)
 void deleteFromRoute(int vehicle, int position)
 {
 	int i;
+	
 	// Make sure there will be a valid vehicleRoute left
 	bulkRoute(vehicle);
 	
@@ -328,6 +329,9 @@ double testRoutes()
 // Generate test routes until we're satisfied the best is found
 void findRoutes()
 {
+	// Set temperature proportional to problem size
+	temperature = stopCount * vehicleCount;
+	
 	if (verbosity >= SANITYVERBOSITY)
 	{
 		printf("\nin findRoutes\n");
