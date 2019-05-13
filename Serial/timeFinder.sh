@@ -14,9 +14,7 @@ rm routeResults.txt
 for i in {1..32}
 do
 # Increment locations
-# RouteFinder crashes if there are fewer locations than vehicles
-# Ensure there are at least 3 locations
-for j in $( seq $(($i>3?$i:3)) 128 )
+for j in {1..256}
 do
 	echo "$i $j" | tee -a routeSettings.txt
 	{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeResults.txt;
