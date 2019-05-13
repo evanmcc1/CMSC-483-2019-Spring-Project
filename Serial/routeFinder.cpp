@@ -89,7 +89,7 @@ void deleteFromRoute(int vehicle, int position)
 	// Shift stops to the left
 	for (i = position; i+1 < vehicleRouteLength[vehicle]; i++)
 	{
-		routes[vehicle][i] = routes[vehicle][i+1];
+		vehicleRoute[vehicle][i] = vehicleRoute[vehicle][i+1];
 	}
 	
 	// Update length
@@ -544,9 +544,9 @@ int main(int argc, char* argv[])
 	// Allocate data in arrays
 	
 	// Matrix for how to navigate the city
-	routes = (connection**)malloc(sizeof(connection*) * vehicleCount);
+	routes = (connection**)malloc(sizeof(connection*) * stopCount);
 	
-	for (i = 0; i < vehicleCount; i++)
+	for (i = 0; i < stopCount; i++)
 	{
 		routes[i] = (connection*)malloc(sizeof(connection) * stopCount);
 	}
