@@ -260,7 +260,7 @@ double testRoutes()
 		}
 		
 		// Step time forward
-		currentMiles += minimumArrival;
+		currentMiles = minimumArrival;
 		
 		int destination;
 		
