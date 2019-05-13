@@ -5,8 +5,8 @@
 
 #define DEFAULTSTOPS 8
 #define CITYWIDTH 20
-#define CAPACITYMULTIPLIER 16
-#define RATEMULTIPLIER 16
+#define CAPACITYMULTIPLIER 1
+#define RATEMULTIPLIER 1
 
 int main(int argc, char* argv[])
 {
