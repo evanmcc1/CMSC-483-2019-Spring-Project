@@ -14,7 +14,7 @@ rm routeResults.txt
 for i in {1..32}
 do
 # Increment locations
-for j in {1..256}
+for j in {2..256}
 do
 	echo "$i $j" | tee -a routeSettings.txt
 	{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeTimes.txt;

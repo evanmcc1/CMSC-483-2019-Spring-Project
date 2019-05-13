@@ -532,12 +532,12 @@ int main(int argc, char* argv[])
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("Enter Total Number of stops:\t");
 	scanf("%d", &stopCount);
 	
-	if (stopCount < MINSTOPS)
+	if (stopCount < MINSTOPS || stopCount < 2)
 	// there are no possible routes
 	{
 		// Exit
 		if (verbosity >= ERRORVERBOSITY)
-			printf("No possible useful routes. Do not supply a number less than %d\n", MINSTOPS);
+			printf("No possible useful routes. Do not supply a number less than %d or 2\n", MINSTOPS);
 		return 2;
 	}
 	
