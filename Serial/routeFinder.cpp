@@ -651,7 +651,9 @@ int main(int argc, char* argv[])
 	// Print routes (print node IDs in for loop)
 	printf("Overall score: %lf\n", bestScore);
 	
-	int averageLength = 0;
+	int totalLength = 0;
+	int maxLength = bestRouteLength[0];
+	int minLength = bestRouteLength[0];
 	
 	for (i = 0; i < vehicleCount; i++)
 	{
@@ -663,11 +665,25 @@ int main(int argc, char* argv[])
 		}
 		
 		// Tally total route length
-		averageLength += bestRouteLength[i];
+		totalLength += bestRouteLength[i];
+		
+		// Check min and max lengths
+		
+		if (bestRouteLength[i] > maxLength)
+		{
+			maxLength = bestRouteLength[i];
+		}
+		
+		if (bestRouteLength[i] < minLength)
+		{
+			minLength = bestRouteLength[i];
+		}
 	}
 	
-	// Print average length of routes
-	printf("Average route length: %lf\n", (double)averageLength/vehicleCount);
+	// Print route length statistics
+	printf("Average route length: %lf\n", (double)totalLength/vehicleCount);
+	printf("Maximum route length: %d\n", maxLength);
+	printf("Minimum route length: %d\n", minLength);
 	
 	return 0;
 }
