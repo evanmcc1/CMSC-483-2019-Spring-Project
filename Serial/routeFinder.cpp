@@ -313,7 +313,7 @@ double testRoutes()
 			destination = vehicleRoute[arrivedVehicle][vehicleRoutePositions[arrivedVehicle]];
 			
 			// Set next vehicle arrival mileage
-			vehicleArrivals[arrivedVehicle] = currentMiles + routes[vehicleLocations[arrivedVehicle]][destination].distance;
+			vehicleArrivals[arrivedVehicle] = currentMiles + fmax(routes[vehicleLocations[arrivedVehicle]][destination].distance, 1);
 			
 			// Assume the vehicle gets there
 			vehicleLocations[arrivedVehicle] = destination;
