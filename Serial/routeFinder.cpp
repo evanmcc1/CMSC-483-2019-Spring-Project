@@ -91,6 +91,7 @@ void deleteFromRoute(int vehicle, int position)
 		routes[vehicle][i] = routes[vehicle][i+1];
 	}
 	
+	// Update length
 	vehicleRouteLength[vehicle]--;
 	
 	// Remove stops next to themselves
@@ -278,7 +279,8 @@ double testRoutes()
 			score += routes[vehicleLocations[arrivedVehicle]][destination].fare;
 			
 			// Set next vehicle arrival mileage
-			vehicleArrivals[arrivedVehicle] = currentMiles + routes[vehicleLocations[arrivedVehicle]][destination].distance;
+			// Minimum of 1 mile
+			vehicleArrivals[arrivedVehicle] = currentMiles + fmax(routes[vehicleLocations[arrivedVehicle]][destination].distance, 1);
 			
 			// Assume the vehicle got there
 			vehicleLocations[arrivedVehicle] = destination;
