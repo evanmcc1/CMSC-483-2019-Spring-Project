@@ -46,8 +46,10 @@ cat routeTimes.txt | sed -e '/^real/d' -e '/^sys/d' -e '/^$/d' -e 's/user\t//' -
 cat routeTimes.txt | sed -e '/^real/d' -e '/^user/d' -e '/^$/d' -e 's/sys\t//' -e 's/s//' -e 's/0m//' > routeSystimes.txt
 # Collect total scores
 cat routeOutput.txt | sed -e '/^Overall score: /!d' -e 's/Overall score: //' > routeScores.txt
-# Collect average route length
-cat routeOutput.txt | sed -e '/^Average route length: /!d' -e 's/Average route length: //' > routeLengths.txt
+# Collect route length statistics
+cat routeOutput.txt | sed -e '/^Average route length: /!d' -e 's/Average route length: //' > routeLengthAverages.txt
+cat routeOutput.txt | sed -e '/^Maximum route length: /!d' -e 's/Maximum route length: //' > routeLengthMaximums.txt
+cat routeOutput.txt | sed -e '/^Minimum route length: /!d' -e 's/Minimum route length: //' > routeLengthMinimums.txt
 # Separate route settings per variable
 cat routeSettings.txt | awk '{ print $1 }' > routeVehicles.txt
 cat routeSettings.txt | awk '{ print $2 }' > routeLocations.txt
