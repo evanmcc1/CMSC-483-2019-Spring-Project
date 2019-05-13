@@ -9,7 +9,7 @@ make routeFinder generateCity
 finish=0
 trap 'finish=1' SIGTERM
 
-echo "You can stop this script with \"kill $$\", optionally preceeded by \"^Z\" and anteceded by \"fg $$\", and still get summary output"
+echo "You can stop this script with \"kill $$\", optionally preceeded by \"^Z\" and anteceded by \"fg $$\", and still compile summary files"
 echo "You can also do \"^Z\", check the output of \"jobs\" for the correct job number of $0, and do \"kill %1; fg %1\""
 echo "In bash, you can do \"^Z\", \"job=\$(jobs | grep $0 | awk '{ print \$1 }' | sed 's/\[//;s/\]//;s/+//'); kill %\$job; fg %\$job\""
 
