@@ -544,9 +544,9 @@ int main(int argc, char* argv[])
 	// Allocate data in arrays
 	
 	// Matrix for how to navigate the city
-	routes = (connection**)malloc(sizeof(connection*) * stopCount);
+	routes = (connection**)malloc(sizeof(connection*) * vehicleCount);
 	
-	for (i = 0; i < stopCount; i++)
+	for (i = 0; i < vehicleCount; i++)
 	{
 		routes[i] = (connection*)malloc(sizeof(connection) * stopCount);
 	}
