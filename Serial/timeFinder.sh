@@ -5,12 +5,15 @@
 # Recompile changes
 make routeFinder generateCity
 
-# Stop loops gracefully on kill
+# Remove load from loops gracefully on kill
 finish=0
 trap 'finish=1' SIGTERM
 
 echo "You can stop this script with \"kill $$\", optionally preceeded by \"^Z\" and anteceded by \"fg $$\", and still get summary output"
+echo "You can also do \"^Z\", check the output of \"jobs\" for the correct job number of $0, and do \"kill %1; fg %1\""
+echo "In bash, you can do \"^Z\", \"job=\$(jobs | grep $0 | awk '{ print \$1 }' | sed 's/\[//;s/\]//;s/+//'); kill %\$job; fg %\$job\""
 
+# Create primary data
 # Remove old data
 rm routeSettings.txt
 rm routeOutput.txt
@@ -31,6 +34,7 @@ do
 done
 done
 
+# Compile secondary data
 # Collect running times
 cat routeTimes.txt | sed -e '/^real/d' -e '/^sys/d' -e '/^$/d' -e 's/user\t//' -e 's/s//' -e 's/0m//' > routeUsertimes.txt
 cat routeTimes.txt | sed -e '/^real/d' -e '/^user/d' -e '/^$/d' -e 's/sys\t//' -e 's/s//' -e 's/0m//' > routeSystimes.txt
