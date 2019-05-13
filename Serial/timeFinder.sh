@@ -8,7 +8,7 @@ make routeFinder generateCity
 # Remove old data
 rm routeSettings.txt
 rm routeOutput.txt
-rm routeResults.txt
+rm routeTimes.txt
 
 # Increment vehicles
 for i in {1..32}
@@ -16,6 +16,7 @@ do
 # Increment locations
 for j in {2..256}
 do
+	# Give an update on how far we are
 	echo "$i $j" | tee -a routeSettings.txt
 	{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeTimes.txt;
 done
