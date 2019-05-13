@@ -6,7 +6,7 @@
 #include <math.h>
 
 #define DEFAULTSTOPS 8
-#define MINSTOPS 3
+#define MINSTOPS 1
 //TODO: Is this a good number of cycles?
 #define CYCLECOUNT 16
 #define CITYWIDTH 20
