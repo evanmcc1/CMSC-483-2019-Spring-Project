@@ -651,6 +651,8 @@ int main(int argc, char* argv[])
 	// Print routes (print node IDs in for loop)
 	printf("Overall score: %lf\n", bestScore);
 	
+	int averageLength = 0;
+	
 	for (i = 0; i < vehicleCount; i++)
 	{
 		printf("Route, length, score: %d, %d, %lf\n", i, bestRouteLength[i], bestRouteScores[i]);
@@ -659,7 +661,13 @@ int main(int argc, char* argv[])
 		{
 			printf("%d\n", bestRoute[i][j]);
 		}
+		
+		// Tally total route length
+		averageLength += bestRouteLength[i];
 	}
+	
+	// Print average length of routes
+	printf("Average route length: %lf\n", (double)averageLength/vehicleCount);
 	
 	return 0;
 }
