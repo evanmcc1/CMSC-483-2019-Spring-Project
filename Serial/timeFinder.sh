@@ -5,6 +5,12 @@
 # Recompile changes
 make routeFinder generateCity
 
+# Stop loops gracefully on kill
+finish=0
+trap 'finish=1' SIGTERM
+
+echo "You can stop this script with \"kill $$\", optionally preceeded by \"^Z\" and anteceded by \"fg $$\", and still get summary output"
+
 # Remove old data
 rm routeSettings.txt
 rm routeOutput.txt
@@ -16,9 +22,12 @@ do
 # Increment locations
 for j in {2..256}
 do
-	# Give an update on how far we are
-	echo "$i $j" | tee -a routeSettings.txt
-	{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeTimes.txt;
+	if [ $finish -eq 0 ]
+	then
+		# Give an update on how far we are
+		echo "$i $j" | tee -a routeSettings.txt
+		{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeTimes.txt;
+	fi
 done
 done
 
