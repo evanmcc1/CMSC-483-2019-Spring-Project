@@ -42,6 +42,7 @@ int **vehicleRoute, **bestRoute;
 int *vehicleRouteLength, *bestRouteLength;
 // How much we make from a vehicleRoute ($/mile)
 double score, bestScore;
+double *vehicleRouteScores, *bestRouteScores;
 // How much the vehicleRoute can be edited
 // Inverse is the probability of replacing bad vehicleRoute
 int temperature = DEFAULTSTOPS;
@@ -188,6 +189,11 @@ double testRoutes()
 	// Reset score to track this test
 	score = 0;
 	
+	for (i = 0; i < vehicleCount; i++)
+	{
+		vehicleRouteScores[i] = 0;
+	}
+	
 	// Counters to know when we're done testing
 	double targetMiles = CITYWIDTH * 8;
 	double currentMiles = 0;
@@ -276,7 +282,7 @@ double testRoutes()
 			destination = (int)floor(stopCount * drand48());
 			
 			// Assume we collect fare
-			score += routes[vehicleLocations[arrivedVehicle]][destination].fare;
+			vehicleRouteScores[arrivedVehicle] += routes[vehicleLocations[arrivedVehicle]][destination].fare;
 			
 			// Set next vehicle arrival mileage
 			// Minimum of 1 mile
@@ -320,9 +326,17 @@ double testRoutes()
 		}
 	}
 	
-	// Divide score by miles * vehicles
-	// We only tracked fare, but we want maximum fare/mile
-	score /= currentMiles;
+	// Tally total score
+	score = 0;
+	
+	for (i = 0; i < vehicleCount; i++)
+	{
+		// We only tracked fare, but we want maximum fare/mile
+		vehicleRouteScores[i] /= currentMiles;
+		score += vehicleRouteScores[i];
+	}
+	
+	// Divide score by vehicles
 	score /= vehicleCount;
 	
 	return score;
@@ -393,6 +407,7 @@ void findRoutes()
 					}
 					
 					bestRouteLength[j] = vehicleRouteLength[j];
+					bestRouteScores[j] = vehicleRouteScores[j];
 				}
 				
 				bestScore = score;
@@ -450,6 +465,7 @@ void findRoutes()
 					}
 					
 					vehicleRouteLength[j] = bestRouteLength[j];
+					vehicleRouteScores[j] = bestRouteScores[j];
 				}
 				
 				score = bestScore;
@@ -544,12 +560,16 @@ int main(int argc, char* argv[])
 	bestRoute = (int**)malloc(sizeof(int*) * vehicleCount);
 	vehicleRouteLength = (int*)malloc(sizeof(int) * vehicleCount);
 	bestRouteLength = (int*)malloc(sizeof(int) * vehicleCount);
+	vehicleRouteScores = (double*)malloc(sizeof(double) * vehicleCount);
+	bestRouteScores = (double*)malloc(sizeof(double) * vehicleCount);
 	
 	// Make vehicleRoute lengths 0 so we know to generate some
 	for (i = 0; i < vehicleCount; i++)
 	{
 		vehicleRouteLength[i] = 0;
 		bestRouteLength[i] = 0;
+		vehicleRouteScores[i] = 0;
+		bestRouteScores[i] = 0;
 	}
 	
 	for (i = 0; i < vehicleCount; i++)
@@ -622,25 +642,24 @@ int main(int argc, char* argv[])
 	
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nCalculating routes...");
 	
+	// Create and test many routes
 	findRoutes();
 	
 	// Print routes
 	if (verbosity >= INSTRUCTIONVERBOSITY) printf("\n\nRoutes:\n");
 	
 	// Print routes (print node IDs in for loop)
-	printf("Score: %lf\n", bestScore);
+	printf("Overall score: %lf\n", bestScore);
 	
 	for (i = 0; i < vehicleCount; i++)
 	{
-		printf("Route %d, length %d:\n", i, bestRouteLength[i]);
+		printf("Route, length, score: %d, %d, %lf\n", i, bestRouteLength[i], bestRouteScores[i]);
 		
 		for (j = 0; j < bestRouteLength[i]; j++)
 		{
 			printf("%d\n", bestRoute[i][j]);
 		}
 	}
-	
-	printf("\n");
 	
 	return 0;
 }
