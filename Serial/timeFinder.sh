@@ -1,6 +1,9 @@
 #!/bin/bash
 # Used to gather data across a wide range of input
 
+# Record date to avoid identical filenames
+date=$(date --iso-8601=ns)
+
 # Recompile changes
 make routeFinder generateCity
 
@@ -16,11 +19,6 @@ echo "In bash, you can do \"^Z\", \"job=\$(jobs | grep $0 | awk '{ print \$1 }' 
 
 # Create primary data
 
-# Remove old data
-rm routeSettings.txt
-rm routeOutput.txt
-rm routeTimes.txt
-
 # Increment vehicles
 for i in {1..32}
 do
@@ -31,9 +29,9 @@ do
 	# the script hasn't been killed
 	then
 		# Record run settings and give an update on how far we are
-		echo "$i $j" | tee -a routeSettings.txt
+		echo "$i $j" | tee -a routeSettings$date.txt
 		# Time a run and record results
-		{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput.txt 2>> routeTimes.txt;
+		{ time ./generateCity $j | ./routeFinder $i 0; } >> routeOutput$date.txt 2>> routeTimes$date.txt;
 	fi
 done
 done
@@ -42,14 +40,14 @@ done
 # Compile secondary data
 
 # Collect running times
-cat routeTimes.txt | sed -e '/^real/d' -e '/^sys/d' -e '/^$/d' -e 's/user\t//' -e 's/s//' -e 's/0m//' > routeUsertimes.txt
-cat routeTimes.txt | sed -e '/^real/d' -e '/^user/d' -e '/^$/d' -e 's/sys\t//' -e 's/s//' -e 's/0m//' > routeSystimes.txt
+cat routeTimes$date.txt | sed -e '/^real/d' -e '/^sys/d' -e '/^$/d' -e 's/user\t//' -e 's/s//' -e 's/0m//' > routeUsertimes$date.txt
+cat routeTimes$date.txt | sed -e '/^real/d' -e '/^user/d' -e '/^$/d' -e 's/sys\t//' -e 's/s//' -e 's/0m//' > routeSystimes$date.txt
 # Collect total scores
-cat routeOutput.txt | sed -e '/^Overall score: /!d' -e 's/Overall score: //' > routeScores.txt
+cat routeOutput$date.txt | sed -e '/^Overall score: /!d' -e 's/Overall score: //' > routeScores$date.txt
 # Collect route length statistics
-cat routeOutput.txt | sed -e '/^Average route length: /!d' -e 's/Average route length: //' > routeLengthAverages.txt
-cat routeOutput.txt | sed -e '/^Maximum route length: /!d' -e 's/Maximum route length: //' > routeLengthMaximums.txt
-cat routeOutput.txt | sed -e '/^Minimum route length: /!d' -e 's/Minimum route length: //' > routeLengthMinimums.txt
+cat routeOutput$date.txt | sed -e '/^Average route length: /!d' -e 's/Average route length: //' > routeLengthAverages$date.txt
+cat routeOutput$date.txt | sed -e '/^Maximum route length: /!d' -e 's/Maximum route length: //' > routeLengthMaximums$date.txt
+cat routeOutput$date.txt | sed -e '/^Minimum route length: /!d' -e 's/Minimum route length: //' > routeLengthMinimums$date.txt
 # Separate route settings per variable
-cat routeSettings.txt | awk '{ print $1 }' > routeVehicles.txt
-cat routeSettings.txt | awk '{ print $2 }' > routeLocations.txt
+cat routeSettings$date.txt | awk '{ print $1 }' > routeVehicles$date.txt
+cat routeSettings$date.txt | awk '{ print $2 }' > routeLocations$date.txt
