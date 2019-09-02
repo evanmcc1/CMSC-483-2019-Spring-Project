@@ -1,10 +1,10 @@
 all: routeFinder generateCity
 	
-routeFinder: routeFinder.cpp
-	gcc -g -Wall -o routeFinder routeFinder.cpp -lm
+routeFinder: routeFinder.c
+	gcc -g -Wall -o routeFinder routeFinder.c -lm
 
-generateCity: generateCity.cpp
-	gcc -g -Wall -o generateCity generateCity.cpp -lm
+generateCity: generateCity.c
+	gcc -g -Wall -o generateCity generateCity.c -lm
 
 run: routeFinder generateCity
 	./generateCity | tee city.txt | ./routeFinder | tee route.txt
