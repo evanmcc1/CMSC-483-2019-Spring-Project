@@ -1,12 +1,10 @@
 all: routeFinder generateCity
 	
 routeFinder: routeFinder.cpp
-	# floor only seems to like c++
-	g++ -g -Wall -o routeFinder routeFinder.cpp
+	gcc -g -Wall -o routeFinder routeFinder.cpp -lm
 
 generateCity: generateCity.cpp
-	# atoi only seems to like c++
-	g++ -g -Wall -o generateCity generateCity.cpp
+	gcc -g -Wall -o generateCity generateCity.cpp -lm
 
 run: routeFinder generateCity
 	./generateCity | tee city.txt | ./routeFinder | tee route.txt
